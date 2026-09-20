@@ -30,3 +30,9 @@ def test_encode_requires_strings():
 
     with pytest.raises(TypeError):
         embedder.encode(["Deep learning", 123])
+
+
+def test_embedding_model_exposes_dimension():
+    embedder = EmbeddingModel()
+
+    assert embedder.dimension == 384

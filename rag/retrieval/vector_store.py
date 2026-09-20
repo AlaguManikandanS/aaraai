@@ -1,5 +1,7 @@
 import os
 
+from rag.retrieval.models import RetrievedChunk
+
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -15,7 +17,7 @@ load_dotenv()
 
 
 class VectorStore:
-    def __init__(self, collection_name="aaraai_chunks"):
+    def __init__(self, collection_name="aaraai_chunks", vector_size=384):
         qdrant_url = os.getenv(
             "QDRANT_URL",
             "http://localhost:6333",
@@ -28,7 +30,7 @@ class VectorStore:
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
-                    size=384,
+                    size=vector_size,
                     distance=Distance.COSINE,
                 ),
             )
@@ -52,9 +54,24 @@ class VectorStore:
                 ]
             )
 
-        return self.client.query_points(
+        points = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
             query_filter=query_filter,
             limit=limit,
         ).points
+
+        results = []
+
+        for point in points:
+            results.append(
+                RetrievedChunk(
+                    score=point.score,
+                    document_id=point.payload["document_id"],
+                    page_number=point.payload["page_number"],
+                    chunk_index=point.payload["chunk_index"],
+                    text=point.payload["text"],
+                )
+            )
+
+        return results

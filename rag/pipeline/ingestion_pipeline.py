@@ -11,7 +11,11 @@ from rag.retrieval.vector_store import VectorStore
 class IngestionPipeline:
     def __init__(self, collection_name="aaraai_chunks"):
         self.embedder = EmbeddingModel()
-        self.vector_store = VectorStore(collection_name=collection_name)
+
+        self.vector_store = VectorStore(
+            collection_name=collection_name,
+            vector_size=self.embedder.dimension,
+        )
 
     def ingest(self, pdf_path, document_id):
         pages = load_pdf(pdf_path)
