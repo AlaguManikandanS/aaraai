@@ -3,3 +3,4 @@ pytest
 sentence-transformers
 python-dotenv
 qdrant-client
+requests
