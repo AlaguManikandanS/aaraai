@@ -28,7 +28,9 @@ def test_rag_pipeline_returns_answer():
             assert "Agam uses a fine-tuned BERT model." in prompt
             assert "What model does Agam use?" in prompt
 
-            return "Agam uses a fine-tuned BERT model. [Page 5]"
+            # The LLM should generate only the answer.
+            # Aaraai adds verified page citations separately.
+            return "Agam uses a fine-tuned BERT model."
 
     pipeline.embedder = FakeEmbedder()
     pipeline.vector_store = FakeVectorStore()
