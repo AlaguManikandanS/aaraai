@@ -1,8 +1,10 @@
 from rag.generation.llm_client import LLMClient
 from rag.pipeline.context_builder import build_context
 from rag.pipeline.prompt_builder import build_prompt
+from rag.pipeline.response_builder import build_response
 from rag.processing.embedder import EmbeddingModel
 from rag.retrieval.vector_store import VectorStore
+
 
 
 class RAGPipeline:
@@ -46,16 +48,7 @@ class RAGPipeline:
 
         answer = self.llm.generate(prompt)
 
-        sources = [
-            {
-                "page_number": chunk.page_number,
-                "chunk_index": chunk.chunk_index,
-                "score": chunk.score,
-            }
-            for chunk in retrieved_chunks
-        ]
-
-        return {
-            "answer": answer,
-            "sources": sources,
-        }
+        return build_response(
+            answer=answer,
+            retrieved_chunks=retrieved_chunks,
+        )
