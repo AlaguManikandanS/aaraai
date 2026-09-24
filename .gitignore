@@ -17,3 +17,8 @@ Thumbs.db
 
 # Qdrant local data
 docker/qdrant_data/
+
+# Django
+db.sqlite3
+media/
+documents/

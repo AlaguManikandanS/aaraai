@@ -37,8 +37,12 @@ class LLMClient:
             timeout=120,
         )
 
-        response.raise_for_status()
-
+        if not response.ok:
+            raise RuntimeError(
+                f"Ollama request failed: "
+                f"status={response.status_code}, "
+                f"body={response.text}"
+            )
         data = response.json()
 
         return data["response"]

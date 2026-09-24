@@ -22,6 +22,8 @@ def test_llm_client_rejects_empty_prompt():
 
 def test_llm_client_generates_response(monkeypatch):
     class FakeResponse:
+        ok = True
+
         def raise_for_status(self):
             pass
 
