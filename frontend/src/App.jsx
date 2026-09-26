@@ -12,7 +12,6 @@ function App() {
   const [document, setDocument] = useState(null);
   const [error, setError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [isAsking, setIsAsking] = useState(false);
@@ -41,7 +40,6 @@ function App() {
     const intervalId = setInterval(async () => {
       try {
         const updatedDocument = await getDocument(document.document_id);
-
         setDocument(updatedDocument);
       } catch (err) {
         setError(err.message);
@@ -109,6 +107,10 @@ function App() {
     }
   }
 
+  const sourcePages = answer
+    ? [...new Set(answer.sources.map((source) => source.page_number))]
+    : [];
+
   return (
     <main>
       <h1>Aaraai</h1>
@@ -174,9 +176,9 @@ function App() {
               <h3>Sources</h3>
 
               <ul>
-                {answer.sources.map((source) => (
-                  <li key={`${source.page_number}-${source.chunk_index}`}>
-                    Page {source.page_number}
+                {sourcePages.map((page) => (
+                  <li key={page}>
+                    Page {page}
                   </li>
                 ))}
               </ul>
