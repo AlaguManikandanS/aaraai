@@ -15,7 +15,7 @@ class LLMClient:
     ):
         self.model = model or os.getenv(
             "OLLAMA_MODEL",
-            "qwen2.5:7b-instruct-q4_K_M",
+            "qwen2.5:3b-instruct-q4_K_M",
         )
 
         self.base_url = base_url or os.getenv(
