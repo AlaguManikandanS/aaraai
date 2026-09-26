@@ -106,3 +106,56 @@ def test_question_returns_rag_answer_for_ready_document(monkeypatch):
         "Agam uses a fine-tuned BERT model. [Page 5]"
     )
     assert response.data["sources"][0]["page_number"] == 5
+
+@pytest.mark.django_db
+def test_list_documents_returns_documents():
+    document = Document.objects.create(
+        status="ready",
+        pages=8,
+        chunks=44,
+    )
+
+    client = APIClient()
+
+    response = client.get("/api/documents/")
+
+    assert response.status_code == 200
+    assert len(response.data) == 1
+    assert response.data[0]["document_id"] == str(document.id)
+    assert response.data[0]["status"] == "ready"
+    assert response.data[0]["pages"] == 8
+    assert response.data[0]["chunks"] == 44
+
+
+@pytest.mark.django_db
+def test_document_detail_returns_document():
+    document = Document.objects.create(
+        status="ready",
+        pages=8,
+        chunks=44,
+    )
+
+    client = APIClient()
+
+    response = client.get(
+        f"/api/documents/{document.id}/"
+    )
+
+    assert response.status_code == 200
+    assert response.data["document_id"] == str(document.id)
+    assert response.data["status"] == "ready"
+    assert response.data["pages"] == 8
+    assert response.data["chunks"] == 44
+
+
+@pytest.mark.django_db
+def test_document_detail_returns_404_for_missing_document():
+    client = APIClient()
+
+    response = client.get(
+        "/api/documents/"
+        "00000000-0000-0000-0000-000000000000/"
+    )
+
+    assert response.status_code == 404
+    assert response.data["error"] == "Document not found."

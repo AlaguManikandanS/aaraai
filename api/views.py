@@ -8,6 +8,7 @@ from rag.pipeline.rag_pipeline import RAGPipeline
 
 from .models import Document
 from .serializers import (
+    DocumentSerializer,
     DocumentUploadSerializer,
     QuestionSerializer,
 )
@@ -20,6 +21,17 @@ def health_check(request):
             "service": "aaraai",
         }
     )
+
+@api_view(["GET"])
+def list_documents(request):
+    documents = Document.objects.all().order_by("-created_at")
+
+    serializer = DocumentSerializer(
+        documents,
+        many=True,
+    )
+
+    return Response(serializer.data)
 
 
 @api_view(["POST"])
@@ -120,3 +132,21 @@ def ask_question(request):
     )
 
     return Response(result)
+
+@api_view(["GET"])
+def document_detail(request, document_id):
+    try:
+        document = Document.objects.get(
+            id=document_id
+        )
+    except Document.DoesNotExist:
+        return Response(
+            {
+                "error": "Document not found."
+            },
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    serializer = DocumentSerializer(document)
+
+    return Response(serializer.data)

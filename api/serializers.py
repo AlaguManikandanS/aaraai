@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .models import Document
 
 
 class DocumentUploadSerializer(serializers.Serializer):
@@ -32,3 +33,24 @@ class QuestionSerializer(serializers.Serializer):
             )
 
         return value
+
+class DocumentSerializer(serializers.ModelSerializer):
+    document_id = serializers.UUIDField(
+        source="id"
+    )
+
+    filename = serializers.CharField(
+        source="file.name",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Document
+        fields = [
+            "document_id",
+            "filename",
+            "status",
+            "pages",
+            "chunks",
+            "created_at",
+        ]
