@@ -73,11 +73,15 @@ def upload_document(request):
 
     except Exception:
         document.status = "failed"
-        document.save(
-            update_fields=["status"]
-        )
+        document.save(update_fields=["status"])
 
-        raise
+        return Response(
+            {
+                "error": "Document processing failed.",
+                "status": document.status,
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     return Response(
         {

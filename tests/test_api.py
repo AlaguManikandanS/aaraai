@@ -5,6 +5,10 @@ import pytest
 
 from api.models import Document
 
+import io
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 @pytest.mark.django_db
 def test_health_check():
@@ -159,3 +163,80 @@ def test_document_detail_returns_404_for_missing_document():
 
     assert response.status_code == 404
     assert response.data["error"] == "Document not found."
+
+@pytest.mark.django_db
+def test_upload_document_success(monkeypatch):
+    class FakeIngestionPipeline:
+        def ingest(self, pdf_path, document_id):
+            return {
+                "pages": 8,
+                "chunks": 44,
+            }
+
+    monkeypatch.setattr(
+        "api.views.IngestionPipeline",
+        FakeIngestionPipeline,
+    )
+
+    pdf_file = SimpleUploadedFile(
+        "research.pdf",
+        b"%PDF-1.4 fake pdf content",
+        content_type="application/pdf",
+    )
+
+    client = APIClient()
+
+    response = client.post(
+        "/api/documents/upload/",
+        {"file": pdf_file},
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    assert response.data["status"] == "ready"
+    assert response.data["pages"] == 8
+    assert response.data["chunks"] == 44
+
+    document = Document.objects.get(id=response.data["document_id"])
+
+    assert document.status == "ready"
+    assert document.pages == 8
+    assert document.chunks == 44
+
+
+@pytest.mark.django_db
+def test_upload_document_marks_failed_when_ingestion_fails(monkeypatch):
+    class FakeIngestionPipeline:
+        def ingest(self, pdf_path, document_id):
+            raise RuntimeError("Ingestion failed")
+
+    monkeypatch.setattr(
+        "api.views.IngestionPipeline",
+        FakeIngestionPipeline,
+    )
+
+    pdf_file = SimpleUploadedFile(
+        "research.pdf",
+        b"%PDF-1.4 fake pdf content",
+        content_type="application/pdf",
+    )
+
+    client = APIClient(raise_request_exception=False)
+
+    response = client.post(
+        "/api/documents/upload/",
+        {"file": pdf_file},
+        format="multipart",
+    )
+
+    assert response.status_code == 500
+    assert response.data["error"] == "Document processing failed."
+    assert response.data["status"] == "failed"
+
+    documents = Document.objects.all()
+
+    assert documents.count() == 1
+
+    document = documents.first()
+
+    assert document.status == "failed"
