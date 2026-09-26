@@ -1,11 +1,8 @@
-from django.urls import reverse
 from rest_framework.test import APIClient
 
 import pytest
 
 from api.models import Document
-
-import io
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -165,17 +162,15 @@ def test_document_detail_returns_404_for_missing_document():
     assert response.data["error"] == "Document not found."
 
 @pytest.mark.django_db
-def test_upload_document_success(monkeypatch):
-    class FakeIngestionPipeline:
-        def ingest(self, pdf_path, document_id):
-            return {
-                "pages": 8,
-                "chunks": 44,
-            }
+def test_upload_document_queues_processing_task(monkeypatch):
+    queued_document_ids = []
+
+    def fake_delay(document_id):
+        queued_document_ids.append(document_id)
 
     monkeypatch.setattr(
-        "api.views.IngestionPipeline",
-        FakeIngestionPipeline,
+        "api.views.process_document.delay",
+        fake_delay,
     )
 
     pdf_file = SimpleUploadedFile(
@@ -192,51 +187,20 @@ def test_upload_document_success(monkeypatch):
         format="multipart",
     )
 
-    assert response.status_code == 201
-    assert response.data["status"] == "ready"
-    assert response.data["pages"] == 8
-    assert response.data["chunks"] == 44
+    assert response.status_code == 202
+    assert response.data["status"] == "processing"
+    assert response.data["pages"] == 0
+    assert response.data["chunks"] == 0
 
-    document = Document.objects.get(id=response.data["document_id"])
-
-    assert document.status == "ready"
-    assert document.pages == 8
-    assert document.chunks == 44
-
-
-@pytest.mark.django_db
-def test_upload_document_marks_failed_when_ingestion_fails(monkeypatch):
-    class FakeIngestionPipeline:
-        def ingest(self, pdf_path, document_id):
-            raise RuntimeError("Ingestion failed")
-
-    monkeypatch.setattr(
-        "api.views.IngestionPipeline",
-        FakeIngestionPipeline,
+    document = Document.objects.get(
+        id=response.data["document_id"]
     )
 
-    pdf_file = SimpleUploadedFile(
-        "research.pdf",
-        b"%PDF-1.4 fake pdf content",
-        content_type="application/pdf",
-    )
+    assert document.status == "processing"
+    assert document.pages == 0
+    assert document.chunks == 0
 
-    client = APIClient(raise_request_exception=False)
+    assert queued_document_ids == [
+        str(document.id)
+    ]
 
-    response = client.post(
-        "/api/documents/upload/",
-        {"file": pdf_file},
-        format="multipart",
-    )
-
-    assert response.status_code == 500
-    assert response.data["error"] == "Document processing failed."
-    assert response.data["status"] == "failed"
-
-    documents = Document.objects.all()
-
-    assert documents.count() == 1
-
-    document = documents.first()
-
-    assert document.status == "failed"

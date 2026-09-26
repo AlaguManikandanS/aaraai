@@ -3,7 +3,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 
-from rag.pipeline.ingestion_pipeline import IngestionPipeline
 from rag.pipeline.rag_pipeline import RAGPipeline
 
 from .models import Document
@@ -12,6 +11,9 @@ from .serializers import (
     DocumentUploadSerializer,
     QuestionSerializer,
 )
+
+from .tasks import process_document
+
 
 @api_view(["GET"])
 def health_check(request):
@@ -37,13 +39,8 @@ def list_documents(request):
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 def upload_document(request):
-    serializer = DocumentUploadSerializer(
-        data=request.data
-    )
-
-    serializer.is_valid(
-        raise_exception=True
-    )
+    serializer = DocumentUploadSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
     uploaded_file = serializer.validated_data["file"]
 
@@ -52,36 +49,7 @@ def upload_document(request):
         status="processing",
     )
 
-    pipeline = IngestionPipeline()
-
-    try:
-        result = pipeline.ingest(
-            pdf_path=document.file.path,
-            document_id=str(document.id),
-        )
-
-        document.pages = result["pages"]
-        document.chunks = result["chunks"]
-        document.status = "ready"
-        document.save(
-            update_fields=[
-                "pages",
-                "chunks",
-                "status",
-            ]
-        )
-
-    except Exception:
-        document.status = "failed"
-        document.save(update_fields=["status"])
-
-        return Response(
-            {
-                "error": "Document processing failed.",
-                "status": document.status,
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    process_document.delay(str(document.id))
 
     return Response(
         {
@@ -91,8 +59,9 @@ def upload_document(request):
             "pages": document.pages,
             "chunks": document.chunks,
         },
-        status=status.HTTP_201_CREATED,
+        status=status.HTTP_202_ACCEPTED,
     )
+
 
 @api_view(["POST"])
 def ask_question(request):
