@@ -75,3 +75,35 @@ class VectorStore:
             )
 
         return results
+
+    def get_document_chunks(self, document_id):
+        query_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=document_id),
+                )
+            ]
+        )
+
+        points, _ = self.client.scroll(
+            collection_name=self.collection_name,
+            scroll_filter=query_filter,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        results = []
+
+        for point in points:
+            results.append(
+                RetrievedChunk(
+                    score=0.0,
+                    document_id=point.payload["document_id"],
+                    page_number=point.payload["page_number"],
+                    chunk_index=point.payload["chunk_index"],
+                    text=point.payload["text"],
+                )
+            )
+
+        return results

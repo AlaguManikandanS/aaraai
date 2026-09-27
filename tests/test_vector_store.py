@@ -81,3 +81,53 @@ def test_vector_store_filters_by_document_id():
 
     assert len(results) == 1
     assert results[0].document_id == "document-A"
+
+
+def test_vector_store_gets_chunks_for_document():
+    store = VectorStore(
+        collection_name="aaraai_document_chunks_test"
+    )
+
+    points = [
+        PointStruct(
+            id=201,
+            vector=[1.0] + [0.0] * 383,
+            payload={
+                "document_id": "document-A",
+                "page_number": 1,
+                "chunk_index": 0,
+                "text": "Introduction to the research.",
+            },
+        ),
+        PointStruct(
+            id=202,
+            vector=[0.0, 1.0] + [0.0] * 382,
+            payload={
+                "document_id": "document-A",
+                "page_number": 2,
+                "chunk_index": 1,
+                "text": "Methodology of the research.",
+            },
+        ),
+        PointStruct(
+            id=203,
+            vector=[1.0] + [0.0] * 383,
+            payload={
+                "document_id": "document-B",
+                "page_number": 1,
+                "chunk_index": 0,
+                "text": "Different document.",
+            },
+        ),
+    ]
+
+    store.add(points)
+
+    results = store.get_document_chunks("document-A")
+
+    assert len(results) == 2
+
+    assert all(
+        result.document_id == "document-A"
+        for result in results
+    )

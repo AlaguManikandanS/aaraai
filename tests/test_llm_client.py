@@ -10,7 +10,7 @@ def test_llm_client_uses_default_configuration(monkeypatch):
     client = LLMClient()
 
     assert client.base_url == "http://localhost:11434"
-    assert client.model == "qwen2.5:7b-instruct-q4_K_M"
+    assert client.model == "qwen2.5:3b-instruct-q4_K_M"
 
 
 def test_llm_client_rejects_empty_prompt():
@@ -35,7 +35,7 @@ def test_llm_client_generates_response(monkeypatch):
     def fake_post(*args, **kwargs):
         assert args[0] == "http://localhost:11434/api/generate"
 
-        assert kwargs["json"]["model"] == "qwen2.5:7b-instruct-q4_K_M"
+        assert kwargs["json"]["model"] == "qwen2.5:3b-instruct-q4_K_M"
         assert kwargs["json"]["prompt"] == "What is RAG?"
         assert kwargs["json"]["stream"] is False
 

@@ -6,6 +6,7 @@ from .views import (
     document_detail,
     upload_document,
     ask_question,
+    document_summary,
 )
 
 
@@ -20,4 +21,9 @@ urlpatterns = [
     ),
 
     path("questions/", ask_question),
+
+    path(
+        "documents/<uuid:document_id>/summary/",
+        document_summary,
+    ),
 ]

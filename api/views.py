@@ -123,3 +123,27 @@ def document_detail(request, document_id):
     serializer = DocumentSerializer(document)
 
     return Response(serializer.data)
+
+@api_view(["GET"])
+def document_summary(request, document_id):
+    try:
+        document = Document.objects.get(id=document_id)
+    except Document.DoesNotExist:
+        return Response(
+            {"error": "Document not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if document.status != "ready":
+        return Response(
+            {
+                "error": "Document is not ready for summary.",
+                "status": document.status,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    pipeline = RAGPipeline()
+    result = pipeline.summarize(str(document.id))
+
+    return Response(result)

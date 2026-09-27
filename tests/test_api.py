@@ -204,3 +204,47 @@ def test_upload_document_queues_processing_task(monkeypatch):
         str(document.id)
     ]
 
+@pytest.mark.django_db
+def test_document_summary_api(client, monkeypatch):
+    document = Document.objects.create(
+        file=SimpleUploadedFile(
+            "paper.pdf",
+            b"fake pdf content",
+            content_type="application/pdf",
+        ),
+        status="ready",
+        pages=2,
+        chunks=4,
+    )
+
+    class FakePipeline:
+        def summarize(self, document_id):
+            assert document_id == str(document.id)
+
+            return {
+                "overview": "This paper presents an AI-based learning system.",
+                "sources": [
+                    {"page_number": 1},
+                    {"page_number": 2},
+                ],
+            }
+
+    monkeypatch.setattr(
+        "api.views.RAGPipeline",
+        lambda: FakePipeline(),
+    )
+
+    response = client.get(
+        f"/api/documents/{document.id}/summary/"
+    )
+
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "overview": "This paper presents an AI-based learning system.",
+        "sources": [
+            {"page_number": 1},
+            {"page_number": 2},
+        ],
+    }
+
