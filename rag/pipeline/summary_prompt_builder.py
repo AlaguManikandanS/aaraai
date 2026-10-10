@@ -1,3 +1,30 @@
+
+SUMMARY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "OVERVIEW": {"type": "string"},
+        "PROBLEM": {"type": "string"},
+        "METHODOLOGY": {"type": "string"},
+        "KEY FINDINGS": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "LIMITATIONS": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+    },
+    "required": [
+        "OVERVIEW",
+        "PROBLEM",
+        "METHODOLOGY",
+        "KEY FINDINGS",
+        "LIMITATIONS",
+    ],
+    "additionalProperties": False,
+}
+
+
 def build_summary_prompt(context: str) -> str:
     """
     Build a grounded prompt for generating a structured research-paper overview.
@@ -29,27 +56,32 @@ IMPORTANT RULES:
 12. For LIMITATIONS, use 2 to 4 bullet points.
 13. Each bullet must start with "- ".
 14. Do not put bullets in the OVERVIEW, PROBLEM, or METHODOLOGY sections.
+15. Do not create sections such as Title, Authors, Abstract,
+    Keywords, Introduction, Methods, Results, or References.
+16. Do not reproduce the paper's original structure.
+17. Your entire response must contain only the five required
+    sections and their content.
+18. Do not include placeholder text such as [Authors' Names].
+19. Under KEY FINDINGS, report only findings explicitly
+    supported by the context. Do not claim clinical validation
+    or strong model performance unless the context provides evidence.
+
 
 OUTPUT FORMAT:
 
-OVERVIEW:
-Write a short paragraph explaining what the paper is about.
+Return only a valid JSON object matching the supplied schema.
 
-PROBLEM:
-Write a short paragraph explaining the problem or need addressed by the paper.
+- OVERVIEW: A concise paragraph explaining the paper.
+- PROBLEM: A concise paragraph describing the problem addressed.
+- METHODOLOGY: A concise paragraph describing the approach.
+- KEY FINDINGS: An array of 2 to 4 evidence-supported findings.
+- LIMITATIONS: An array of 2 to 4 evidence-supported limitations.
 
-METHODOLOGY:
-Write a short paragraph explaining the main approach, system, models, or methodology.
+Use only claims supported by the research-paper context.
+Do not invent results, performance metrics, or clinical validation.
+If information is missing, explicitly state that it is not available.
+Do not include Markdown or additional sections.
 
-KEY FINDINGS:
-- First important finding or result.
-- Second important finding or result.
-- Third important finding or result.
-
-LIMITATIONS:
-- First limitation or challenge.
-- Second limitation or challenge.
-- Third limitation or challenge.
 
 RESEARCH PAPER CONTEXT:
 

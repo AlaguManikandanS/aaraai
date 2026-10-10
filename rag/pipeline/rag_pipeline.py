@@ -6,6 +6,12 @@ from rag.pipeline.summary_prompt_builder import build_summary_prompt
 from rag.processing.embedder import EmbeddingModel
 from rag.retrieval.vector_store import VectorStore
 
+import json
+from rag.pipeline.summary_prompt_builder import (
+    build_summary_prompt,
+    SUMMARY_SCHEMA,
+)
+
 
 class RAGPipeline:
     def __init__(self, collection_name="aaraai_chunks"):
@@ -71,7 +77,28 @@ class RAGPipeline:
 
         prompt = build_summary_prompt(context)
 
-        overview = self.llm.generate(prompt)
+
+        raw_summary = self.llm.generate(
+            prompt,
+            output_format=SUMMARY_SCHEMA,
+        )
+
+        summary = json.loads(raw_summary)
+
+        sections = [
+            f"OVERVIEW:\n{summary['OVERVIEW']}",
+            f"PROBLEM:\n{summary['PROBLEM']}",
+            f"METHODOLOGY:\n{summary['METHODOLOGY']}",
+            "KEY FINDINGS:\n" + "\n".join(
+                f"- {item}" for item in summary["KEY FINDINGS"]
+            ),
+            "LIMITATIONS:\n" + "\n".join(
+                f"- {item}" for item in summary["LIMITATIONS"]
+            ),
+        ]
+
+        overview = "\n\n".join(sections)
+
 
         pages = sorted(
             {

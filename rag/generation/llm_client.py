@@ -23,18 +23,29 @@ class LLMClient:
             "http://localhost:11434",
         )
 
-    def generate(self, prompt: str) -> str:
+    
+    def generate(self, prompt: str, output_format=None) -> str:
         if not prompt.strip():
             raise ValueError("prompt cannot be empty")
 
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.1,
+                "num_predict": 1000,
+                "num_ctx": 8192,
+            },
+        }
+
+        if output_format is not None:
+            payload["format"] = output_format
+
         response = requests.post(
             f"{self.base_url}/api/generate",
-            json={
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-            },
-            timeout=120,
+            json=payload,
+            timeout=300,
         )
 
         if not response.ok:
@@ -43,6 +54,6 @@ class LLMClient:
                 f"status={response.status_code}, "
                 f"body={response.text}"
             )
-        data = response.json()
 
+        data = response.json()
         return data["response"]

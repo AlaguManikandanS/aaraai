@@ -34,9 +34,15 @@ def test_rag_pipeline_summarizes_document():
         ),
     ]
 
+
     pipeline.llm.generate.return_value = (
-        "OVERVIEW:\nAn AI-based adaptive learning system."
+        '{"OVERVIEW": "An AI-based adaptive learning system.",'
+        '"PROBLEM": "Not available in the provided context.",'
+        '"METHODOLOGY": "Not available in the provided context.",'
+        '"KEY FINDINGS": ["Not available in the provided context."],'
+        '"LIMITATIONS": ["Not available in the provided context."]}'
     )
+
 
     result = pipeline.summarize("document-A")
 
