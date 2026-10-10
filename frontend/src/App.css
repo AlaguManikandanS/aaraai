@@ -182,3 +182,69 @@
     border-right-color: var(--border);
   }
 }
+
+.paper-overview {
+  margin-top: 32px;
+}
+
+.overview-header {
+  margin-bottom: 20px;
+}
+
+.overview-header h2 {
+  margin-bottom: 6px;
+}
+
+.overview-header p {
+  margin: 0;
+  color: #666;
+}
+
+.overview-card {
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.overview-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.overview-card p {
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+.overview-card ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.overview-card li {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.overview-sources {
+  margin-top: 24px;
+}
+
+.overview-sources h3 {
+  margin-bottom: 12px;
+}
+
+.source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.source-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 14px;
+}

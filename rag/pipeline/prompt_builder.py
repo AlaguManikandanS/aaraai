@@ -1,9 +1,7 @@
+
 def build_prompt(question: str, context: str) -> str:
     """
-    Build a grounded prompt for the research-paper LLM.
-
-    The LLM is instructed to answer using only the retrieved
-    context and to reference page numbers when possible.
+    Build a grounded prompt for answering research-paper questions.
     """
 
     if not question.strip():
@@ -16,13 +14,22 @@ def build_prompt(question: str, context: str) -> str:
 
 Answer the user's question using only the provided research-paper context.
 
-Rules:
-1. Do not use information that is not present in the provided context.
-2. If the answer cannot be found in the context, say that the information
-   could not be found in the paper.
-3. Give a clear and concise answer.
-4. Mention the relevant page number when possible.
-5. Do not invent facts, citations, or references.
+RULES:
+1. Use only information explicitly supported by the provided context.
+2. If the context does not contain enough information, clearly state
+   what could not be found in the paper.
+3. Do not invent facts, methods, experiments, results, or citations.
+4. Distinguish the authors' reported findings from proposed benefits,
+   intended outcomes, or your own inferences.
+5. Do not present a potential benefit as a proven result unless the
+   context provides supporting evidence.
+6. Answer every part of the user's question when the context supports it.
+7. Place relevant page citations next to the claims they support,
+   using only page numbers provided in the context.
+8. If different parts of the question require different evidence,
+   explain each part separately.
+9. Use clear, concise language without repeating the same idea.
+10. If a detail is uncertain or unsupported, say so rather than guessing.
 
 RESEARCH PAPER CONTEXT:
 {context}

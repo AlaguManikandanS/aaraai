@@ -78,3 +78,15 @@ export async function askQuestion(documentId, question) {
 
   return response.json();
 }
+
+export async function getDocumentSummary(documentId) {
+  const response = await fetch(
+    `${API_BASE_URL}/documents/${documentId}/summary/`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch document summary.");
+  }
+
+  return response.json();
+}

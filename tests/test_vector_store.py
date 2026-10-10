@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from qdrant_client.models import PointStruct
 
 from rag.retrieval.vector_store import VectorStore
@@ -131,3 +133,44 @@ def test_vector_store_gets_chunks_for_document():
         result.document_id == "document-A"
         for result in results
     )
+
+
+def test_vector_store_gets_all_chunks_across_pages():
+    collection_name = f"aaraai_pagination_test_{uuid4().hex}"
+    store = VectorStore(collection_name=collection_name)
+
+    try:
+        document_id = "document-pagination-test"
+
+        points = [
+            PointStruct(
+                id=1000 + index,
+                vector=[1.0] + [0.0] * 383,
+                payload={
+                    "document_id": document_id,
+                    "page_number": (index // 10) + 1,
+                    "chunk_index": index,
+                    "text": f"Research chunk {index}",
+                },
+            )
+            for index in range(105)
+        ]
+
+        store.add(points)
+
+        results = store.get_document_chunks(document_id)
+
+        assert len(results) == 105
+        assert len({chunk.chunk_index for chunk in results}) == 105
+
+        assert [
+            chunk.chunk_index for chunk in results
+        ] == list(range(105))
+
+        assert all(
+            chunk.document_id == document_id
+            for chunk in results
+        )
+
+    finally:
+        store.client.delete_collection(collection_name)

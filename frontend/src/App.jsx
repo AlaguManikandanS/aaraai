@@ -5,6 +5,7 @@ import {
   getDocument,
   getDocuments,
   uploadDocument,
+  getDocumentSummary,
 } from "./api/documentApi";
 
 function App() {
@@ -15,6 +16,10 @@ function App() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [isAsking, setIsAsking] = useState(false);
+
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
     async function loadDocuments() {
@@ -107,9 +112,71 @@ function App() {
     }
   }
 
+  async function handleSummary() {
+    if (!document || document.status !== "ready") {
+      return;
+    }
+
+    setSummaryLoading(true);
+    setSummaryError("");
+
+    try {
+      const data = await getDocumentSummary(document.document_id);
+      setSummary(data);
+    } catch (error) {
+      setSummaryError(error.message);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }
+
   const sourcePages = answer
     ? [...new Set(answer.sources.map((source) => source.page_number))]
     : [];
+
+  function parseSummary(summaryText) {
+    const sections = [
+      "OVERVIEW",
+      "PROBLEM",
+      "METHODOLOGY",
+      "KEY FINDINGS",
+      "LIMITATIONS",
+    ];
+
+    const parsed = {};
+
+    for (let i = 0; i < sections.length; i++) {
+      const currentSection = sections[i];
+      const nextSection = sections[i + 1];
+
+      const startMarker = `${currentSection}:`;
+      const startIndex = summaryText.indexOf(startMarker);
+
+      if (startIndex === -1) {
+        parsed[currentSection] = "";
+        continue;
+      }
+
+      const contentStart = startIndex + startMarker.length;
+
+      const endIndex = nextSection
+        ? summaryText.indexOf(`${nextSection}:`, contentStart)
+        : summaryText.length;
+
+      parsed[currentSection] = summaryText
+        .slice(contentStart, endIndex === -1 ? summaryText.length : endIndex)
+        .trim();
+    }
+
+    return parsed;
+  }
+
+  function parseBulletPoints(text) {
+    return text
+      .split(/\s*-\s+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
 
   return (
     <main>
@@ -150,6 +217,91 @@ function App() {
 
       {document?.status === "ready" && (
         <section>
+          <h2>Paper Overview</h2>
+
+          <button
+            type="button"
+            onClick={handleSummary}
+            disabled={summaryLoading}
+          >
+            {summaryLoading ? "Generating Overview..." : "Generate Paper Overview"}
+          </button>
+
+          {summaryError && (
+            <p>
+              Error: {summaryError}
+            </p>
+          )}
+
+          {summary && (
+            <section className="paper-overview">
+              <div className="overview-header">
+                <div>
+                  <h2>Paper Overview</h2>
+                  <p>AI-generated understanding of your research paper.</p>
+                </div>
+              </div>
+
+              {(() => {
+                const parsedSummary = parseSummary(summary.overview);
+
+                return (
+                  <>
+                    <article className="overview-card">
+                      <h3>Overview</h3>
+                      <p>{parsedSummary.OVERVIEW}</p>
+                    </article>
+
+                    <article className="overview-card">
+                      <h3>Problem</h3>
+                      <p>{parsedSummary.PROBLEM}</p>
+                    </article>
+
+                    <article className="overview-card">
+                      <h3>Methodology</h3>
+                      <p>{parsedSummary.METHODOLOGY}</p>
+                    </article>
+
+                    <article className="overview-card">
+                      <h3>Key Findings</h3>
+                      <ul>
+                        {parseBulletPoints(parsedSummary["KEY FINDINGS"]).map(
+                          (item) => (
+                            <li key={item}>{item}</li>
+                          )
+                        )}
+                      </ul>
+                    </article>
+
+                    <article className="overview-card">
+                      <h3>Limitations</h3>
+                      <ul>
+                        {parseBulletPoints(parsedSummary.LIMITATIONS).map(
+                          (item) => (
+                            <li key={item}>{item}</li>
+                          )
+                        )}
+                      </ul>
+                    </article>
+
+                    <div className="overview-sources">
+                      <h3>Sources</h3>
+                      <div className="source-list">
+                        {summary.sources.map((source) => (
+                          <span
+                            className="source-badge"
+                            key={source.page_number}
+                          >
+                            Page {source.page_number}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </section>
+          )}
           <h2>Ask Aaraai</h2>
 
           <textarea
